@@ -26,6 +26,9 @@ ID,Timestamp,Transaction Type,Asset,Quantity Transacted,Price Currency,Price at 
 
 SAMPLE_RATES_CSV = """\
 currency_code,no,date,rate
+eur,P90/A/NBP/2024,2024-12-27,4.2810
+eur,P91/A/NBP/2024,2024-12-30,4.2890
+eur,P92/A/NBP/2024,2024-12-31,4.2950
 eur,001/A/NBP/2025,2025-01-02,4.2668
 eur,002/A/NBP/2025,2025-01-03,4.2718
 eur,003/A/NBP/2025,2025-01-07,4.2515

@@ -74,10 +74,36 @@ class TestMatchRate:
         assert rate == pytest.approx(4.2794)  # 2025-01-09 rate
         assert date == datetime.date(2025, 1, 9)
 
+    def test_jan1_uses_dec31_prev_year(self):
+        # Jan 1, 2025: latest date < 2025-01-01 in the table is Dec 31, 2024
+        rates = _rates_df()
+        rate, date = _match_rate(rates, datetime.date(2025, 1, 1))
+        assert rate == pytest.approx(4.2950)  # 2024-12-31 rate
+        assert date == datetime.date(2024, 12, 31)
+
+    def test_jan1_uses_dec30_when_dec31_missing(self):
+        # If Dec 31 is absent (e.g. holiday), fall back to Dec 30
+        raw = pd.read_csv(StringIO(SAMPLE_RATES_CSV))
+        raw = raw[raw["date"] != "2024-12-31"]
+        rates = _parse_rates_df(raw)
+        rate, date = _match_rate(rates, datetime.date(2025, 1, 1))
+        assert rate == pytest.approx(4.2890)  # 2024-12-30 rate
+        assert date == datetime.date(2024, 12, 30)
+
+    def test_jan1_uses_dec27_when_dec30_and_31_missing(self):
+        # If both Dec 30 and 31 are absent (weekend + holiday), fall back to Dec 27
+        raw = pd.read_csv(StringIO(SAMPLE_RATES_CSV))
+        raw = raw[~raw["date"].isin(["2024-12-30", "2024-12-31"])]
+        rates = _parse_rates_df(raw)
+        rate, date = _match_rate(rates, datetime.date(2025, 1, 1))
+        assert rate == pytest.approx(4.2810)  # 2024-12-27 rate
+        assert date == datetime.date(2024, 12, 27)
+
     def test_raises_when_no_prior_rate(self):
+        # Rates starting 2024-12-27; a date before that has nothing
         rates = _rates_df()
         with pytest.raises(ValueError, match="No exchange rate available"):
-            _match_rate(rates, datetime.date(2025, 1, 1))
+            _match_rate(rates, datetime.date(2024, 12, 27))
 
 
 # ---------------------------------------------------------------------------
@@ -88,8 +114,18 @@ class TestFileCurrencySource:
     def test_loads_rates(self, rates_csv):
         src = FileCurrencySource(rates_csv)
         df = src.get_rates("EUR", [2025])
-        assert len(df) == 9
+        # 9 rows from Jan 2025 + 2 from Dec 29–31 of 2024 (Dec 30 and 31; Dec 27 < 29)
+        assert len(df) == 11
         assert list(df.columns) == ["date", "rate"]
+
+    def test_includes_prev_dec_tail(self, rates_csv):
+        src = FileCurrencySource(rates_csv)
+        df = src.get_rates("EUR", [2025])
+        dates = list(df["date"])
+        assert datetime.date(2024, 12, 30) in dates
+        assert datetime.date(2024, 12, 31) in dates
+        # Dec 27 is day < 29, so excluded
+        assert datetime.date(2024, 12, 27) not in dates
 
     def test_date_type(self, rates_csv):
         src = FileCurrencySource(rates_csv)
@@ -104,8 +140,8 @@ class TestFileCurrencySource:
     def test_empty_years_returns_all(self, rates_csv):
         src = FileCurrencySource(rates_csv)
         df = src.get_rates("EUR", [])
-        # No year filter applied → all 9 rows returned
-        assert len(df) == 9
+        # No year filter → all 12 rows (3 Dec 2024 + 9 Jan 2025)
+        assert len(df) == 12
 
 
 # ---------------------------------------------------------------------------
@@ -120,38 +156,46 @@ class TestNBPApiCurrencySource:
             "currency": "euro",
             "code": "EUR",
             "rates": [
+                {"no": "P92/A/NBP/2024", "effectiveDate": "2024-12-31", "mid": 4.2950},
                 {"no": "001/A/NBP/2025", "effectiveDate": "2025-01-02", "mid": 4.2668},
                 {"no": "002/A/NBP/2025", "effectiveDate": "2025-01-03", "mid": 4.2718},
             ],
         }
-        url = f"{NBP_BASE_URL}/EUR/2025-01-01/2025-12-31/?format=json"
+        # New range: {year-1}-12-29 to {year}-12-30
+        url = f"{NBP_BASE_URL}/EUR/2024-12-29/2025-12-30/?format=json"
         responses_lib.add(responses_lib.GET, url, json=payload, status=200)
 
         src = NBPApiCurrencySource()
         df = src.get_rates("EUR", [2025])
-        assert len(df) == 2
-        assert df.loc[0, "rate"] == pytest.approx(4.2668)
-        assert df.loc[1, "date"] == datetime.date(2025, 1, 3)
+        assert len(df) == 3
+        assert df.loc[0, "rate"] == pytest.approx(4.2950)
+        assert df.loc[0, "date"] == datetime.date(2024, 12, 31)
+        assert df.loc[2, "date"] == datetime.date(2025, 1, 3)
 
     @responses_lib.activate
-    def test_multi_year_concatenates(self):
+    def test_multi_year_deduplicates_overlap(self):
+        # For years [2024, 2025] the ranges overlap on Dec 29–30, 2024.
+        # Each year's payload returns one overlapping date; result must deduplicate.
         def _payload(year):
             return {
                 "table": "A",
                 "currency": "euro",
                 "code": "EUR",
                 "rates": [
+                    {"no": f"X/A/NBP/{year}", "effectiveDate": f"{year - 1}-12-30", "mid": 4.0},
                     {"no": f"001/A/NBP/{year}", "effectiveDate": f"{year}-01-02", "mid": 4.0},
                 ],
             }
 
         for year in (2024, 2025):
-            url = f"{NBP_BASE_URL}/EUR/{year}-01-01/{year}-12-31/?format=json"
+            url = f"{NBP_BASE_URL}/EUR/{year - 1}-12-29/{year}-12-30/?format=json"
             responses_lib.add(responses_lib.GET, url, json=_payload(year), status=200)
 
         src = NBPApiCurrencySource()
         df = src.get_rates("EUR", [2024, 2025])
-        assert len(df) == 2
+        # 2023-12-30, 2024-01-02, 2024-12-30 (deduped), 2025-01-02 → 4 rows
+        assert len(df) == 4
+        assert df["date"].is_unique
 
 
 # ---------------------------------------------------------------------------

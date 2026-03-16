@@ -23,7 +23,7 @@ pip install -e .
 ```bash
 pit38-crypto process \
   --statement data/statement/statement-2025.sample.csv \
-  --currency-file data/currency/eurpln_2025.sample.csv \
+  --currency-file data/currency/eurpln-2025.sample.csv \
   --output result.csv
 ```
 

@@ -10,10 +10,12 @@ fi
 
 CURRENCY=$(echo "$1" | tr '[:upper:]' '[:lower:]')
 YEAR=$2
-START="${YEAR}-01-01"
-END="${YEAR}-12-31"
+# Start from Dec 29 of the previous year so that Jan 1 transactions can
+# always resolve a rate from the prior December (handles weekend/holiday edge cases).
+START="$((YEAR - 1))-12-29"
+END="${YEAR}-12-30"
 
-OUTPUT=${3:-./data/currency/${CURRENCY}pln_${YEAR}.csv}
+OUTPUT=${3:-./data/currency/${CURRENCY}pln-${YEAR}.csv}
 
 URL="https://api.nbp.pl/api/exchangerates/rates/A/${CURRENCY}/${START}/${END}/?format=json"
 

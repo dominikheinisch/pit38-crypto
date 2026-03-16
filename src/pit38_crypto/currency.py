@@ -40,21 +40,38 @@ class FileCurrencySource:
     def get_rates(self, currency: str, years: list[int]) -> pd.DataFrame:
         df = _parse_rates_df(pd.read_csv(self.path))
         if years:
-            df = df[df["date"].apply(lambda d: d.year).isin(years)]
+            min_year = min(years)
+            in_years = df["date"].apply(lambda d: d.year).isin(years)
+            # Dec 29–31 of the previous year cover Jan 1 transactions whose
+            # previous working day falls in the prior year.
+            prev_dec_tail = df["date"].apply(
+                lambda d: d.year == min_year - 1 and d.month == 12 and d.day >= 29
+            )
+            df = df[in_years | prev_dec_tail]
         return df.reset_index(drop=True)
 
 
 class NBPApiCurrencySource:
-    """Fetch NBP exchange rates from the public API, one request per year."""
+    """Fetch NBP exchange rates from the public API, one request per year.
+
+    Each request covers ``{year-1}-12-29`` to ``{year}-12-30`` so that
+    Jan 1 transactions can always resolve a rate from the prior December.
+    """
 
     def get_rates(self, currency: str, years: list[int]) -> pd.DataFrame:
         frames = [self._fetch_year(currency.upper(), y) for y in sorted(set(years))]
         if not frames:
             return pd.DataFrame(columns=[RATE_DATE_COL, RATE_COL])
-        return pd.concat(frames, ignore_index=True)
+        combined = pd.concat(frames, ignore_index=True)
+        # Adjacent year ranges overlap by 2 days (Dec 29–30); deduplicate.
+        return (
+            combined.drop_duplicates(subset=[RATE_DATE_COL])
+            .sort_values(RATE_DATE_COL)
+            .reset_index(drop=True)
+        )
 
     def _fetch_year(self, currency: str, year: int) -> pd.DataFrame:
-        url = f"{NBP_BASE_URL}/{currency}/{year}-01-01/{year}-12-31/?format=json"
+        url = f"{NBP_BASE_URL}/{currency}/{year - 1}-12-29/{year}-12-30/?format=json"
         logger.debug("Fetching NBP rates: %s", url)
         response = requests.get(url, timeout=30)
         response.raise_for_status()
