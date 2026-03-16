@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pit38-crypto"
+version = "0.1.0"
+description = "Polish PIT-38 tax calculator for crypto transactions"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.2",
+    "requests>=2.31",
+    "click>=8.1",
+]
+
+[project.scripts]
+pit38-crypto = "pit38_crypto.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pit38_crypto"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "responses>=0.25",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--tb=short"
