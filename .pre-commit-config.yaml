@@ -1,0 +1,11 @@
+# Backstop that runs Ruff on every `git commit`, including commits made outside a
+# Claude session. Activate once per clone with: pre-commit install
+# Bump the rev with: pre-commit autoupdate
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.18
+    hooks:
+      # Linter first (with autofix), then formatter — Astral's recommended order.
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format

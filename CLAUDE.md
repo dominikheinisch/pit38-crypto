@@ -27,12 +27,14 @@ reuse them rather than inlining new sample data.
 
 ## Code style
 
-**Ruff is the linter and formatter** (config in `pyproject.toml` under `[tool.ruff]`). No type
-checker is wired up. Run before committing — and the `Write|Edit` hook auto-formats edited
-`.py` files for you:
+**Ruff is the linter and formatter**, run via pre-commit only — it is *not* a project
+dependency and there is no per-edit hook, so `.venv/bin/ruff` does not exist. A committed
+`.pre-commit-config.yaml` (managed `astral-sh/ruff-pre-commit`, pinned by `rev`) runs
+`ruff check --fix` + `ruff format` on every `git commit`. Config lives in `pyproject.toml`
+under `[tool.ruff]`. No type checker is wired up.
 
-- Lint:   `.venv/bin/ruff check --fix .`
-- Format: `.venv/bin/ruff format .`
+- Activate the hook once per clone: `pre-commit install`
+- Run Ruff on demand (all files):  `pre-commit run --all-files`
 
 Rules: `E, F, I, UP, B`; `tests/*` relaxes `E501`/`E731` (long CSV fixtures, lambda rule
 callables). Beyond what Ruff enforces, follow these by hand:

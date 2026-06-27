@@ -58,7 +58,8 @@ bash nbp_currency_to_csv.sh EUR 2025
 pip install -e ".[dev]"
 pytest
 
-# Lint & format (Ruff)
-ruff check --fix .
-ruff format .
+# Ruff (lint + format) runs via pre-commit, not as a project dependency.
+# Install the tool once (e.g. `pipx install pre-commit`), then:
+pre-commit install          # activate the git hook — runs Ruff on every commit
+pre-commit run --all-files  # run Ruff on demand
 ```
