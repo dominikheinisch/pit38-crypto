@@ -3,7 +3,11 @@ from __future__ import annotations
 import click
 import pandas as pd
 
-from pit38_crypto.currency import CurrencyMerger, FileCurrencySource, NBPApiCurrencySource
+from pit38_crypto.currency import (
+    CurrencyMerger,
+    FileCurrencySource,
+    NBPApiCurrencySource,
+)
 from pit38_crypto.pipeline import ALL_STEPS, STEP_MERGE_CURRENCY, Pipeline
 from pit38_crypto.reader import read_statement
 
@@ -61,7 +65,9 @@ def process(
     step_list = [s.strip() for s in steps.split(",") if s.strip()]
 
     if currency_file and currency_api:
-        raise click.UsageError("--currency-file and --currency-api are mutually exclusive.")
+        raise click.UsageError(
+            "--currency-file and --currency-api are mutually exclusive."
+        )
 
     merger: CurrencyMerger | None = None
     if STEP_MERGE_CURRENCY in step_list:
@@ -69,7 +75,11 @@ def process(
             raise click.UsageError(
                 "merge-currency step requires either --currency-file or --currency-api."
             )
-        source = FileCurrencySource(currency_file) if currency_file else NBPApiCurrencySource()
+        source = (
+            FileCurrencySource(currency_file)
+            if currency_file
+            else NBPApiCurrencySource()
+        )
         merger = CurrencyMerger(source=source, currency=currency)
 
     try:

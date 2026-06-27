@@ -14,8 +14,9 @@ their venv path every time:
 - Never use a bare `python` / `pip` / `pytest` (that hits the system interpreter, which lacks
   pandas/click) and never `pip install` into the global environment.
 
-Dependencies are declared in `pyproject.toml` (`dependencies` + `[dependency-groups].dev`).
-Edit them there, then `.venv/bin/pip install -e ".[dev]"` to apply.
+Dependencies are declared in `pyproject.toml` (`dependencies` + the `dev` extra under
+`[project.optional-dependencies]`). Edit them there, then `.venv/bin/pip install -e ".[dev]"`
+to apply.
 
 ## Testing
 
@@ -26,8 +27,15 @@ reuse them rather than inlining new sample data.
 
 ## Code style
 
-No linter or type checker is wired up yet (no ruff/ty/pyright installed). Match the existing
-style by hand:
+**Ruff is the linter and formatter** (config in `pyproject.toml` under `[tool.ruff]`). No type
+checker is wired up. Run before committing — and the `Write|Edit` hook auto-formats edited
+`.py` files for you:
+
+- Lint:   `.venv/bin/ruff check --fix .`
+- Format: `.venv/bin/ruff format .`
+
+Rules: `E, F, I, UP, B`; `tests/*` relaxes `E501`/`E731` (long CSV fixtures, lambda rule
+callables). Beyond what Ruff enforces, follow these by hand:
 
 - `from __future__ import annotations` at the top of modules using `X | None` annotations.
 - Full type hints on public functions/methods; keyword-only args after `*` where the code does.
@@ -71,3 +79,9 @@ style by hand:
 - `data/` is git-ignored. Layout: `data/statement/`, `data/currency/`, `data/results/`.
   Use the `*.sample.csv` files for examples/docs.
 - `nbp_currency_to_csv.sh EUR 2025` fetches a year of NBP rates into a CSV (bash + curl + jq).
+
+## Keep docs in sync
+
+When you change tooling, commands, dependencies, or behavior, update the docs and Claude
+config in the same change — keep `README.md`, this `CLAUDE.md`, `.claude/` (settings, hooks,
+skills), and `pyproject.toml` consistent so they never drift from how the project actually works.

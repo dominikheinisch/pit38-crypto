@@ -57,4 +57,8 @@ bash nbp_currency_to_csv.sh EUR 2025
 ```bash
 pip install -e ".[dev]"
 pytest
+
+# Lint & format (Ruff)
+ruff check --fix .
+ruff format .
 ```

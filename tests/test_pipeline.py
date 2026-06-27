@@ -9,10 +9,9 @@ from click.testing import CliRunner
 
 from pit38_crypto.cli import main
 from pit38_crypto.currency import CurrencyMerger, FileCurrencySource
-from pit38_crypto.filter import TransactionFilter
-from pit38_crypto.pipeline import Pipeline, ALL_STEPS
+from pit38_crypto.pipeline import ALL_STEPS, Pipeline
 from pit38_crypto.reader import read_statement
-from tests.conftest import SAMPLE_STATEMENT_CSV, SAMPLE_RATES_CSV
+from tests.conftest import SAMPLE_RATES_CSV, SAMPLE_STATEMENT_CSV
 
 
 def _read(content, suffix=".csv"):
@@ -28,6 +27,7 @@ def _read(content, suffix=".csv"):
 # ---------------------------------------------------------------------------
 # Pipeline unit tests
 # ---------------------------------------------------------------------------
+
 
 class TestPipeline:
     def _raw_df(self):
@@ -92,6 +92,7 @@ class TestPipeline:
 # CLI integration tests
 # ---------------------------------------------------------------------------
 
+
 class TestCLI:
     def _write_tmp(self, content, suffix=".csv"):
         fd, path = tempfile.mkstemp(suffix=suffix)
@@ -108,9 +109,12 @@ class TestCLI:
             main,
             [
                 "process",
-                "--statement", stmt,
-                "--currency-file", rates,
-                "--output", output,
+                "--statement",
+                stmt,
+                "--currency-file",
+                rates,
+                "--output",
+                output,
             ],
         )
         assert result.exit_code == 0, result.output
@@ -128,9 +132,12 @@ class TestCLI:
             main,
             [
                 "process",
-                "--statement", stmt,
-                "--steps", "filter,transform",
-                "--output", output,
+                "--statement",
+                stmt,
+                "--steps",
+                "filter,transform",
+                "--output",
+                output,
             ],
         )
         assert result.exit_code == 0, result.output
@@ -148,10 +155,13 @@ class TestCLI:
             main,
             [
                 "process",
-                "--statement", stmt,
-                "--currency-file", rates,
+                "--statement",
+                stmt,
+                "--currency-file",
+                rates,
                 "--currency-api",
-                "--output", output,
+                "--output",
+                output,
             ],
         )
         assert result.exit_code != 0
@@ -167,9 +177,12 @@ class TestCLI:
             main,
             [
                 "process",
-                "--statement", stmt,
-                "--steps", "merge-currency",
-                "--output", output,
+                "--statement",
+                stmt,
+                "--steps",
+                "merge-currency",
+                "--output",
+                output,
             ],
         )
         assert result.exit_code != 0

@@ -20,13 +20,25 @@ pit38-crypto = "pit38_crypto.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/pit38_crypto"]
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",
     "responses>=0.25",
+    "ruff>=0.9",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--tb=short"
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+# pycodestyle, pyflakes, isort, pyupgrade, flake8-bugbear
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Test fixtures embed long CSV data lines; rule callables read fine as lambdas.
+"tests/*" = ["E501", "E731"]

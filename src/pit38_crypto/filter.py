@@ -6,9 +6,9 @@ import pandas as pd
 
 TRANSACTION_TYPE_COL = "Transaction Type"
 
-_buy_rule: Callable[[pd.DataFrame], pd.Series] = lambda df: df[
-    TRANSACTION_TYPE_COL
-].isin(["Advanced Trade Buy", "Buy"])
+
+def _buy_rule(df: pd.DataFrame) -> pd.Series:
+    return df[TRANSACTION_TYPE_COL].isin(["Advanced Trade Buy", "Buy"])
 
 
 class TransactionFilter:

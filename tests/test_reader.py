@@ -1,7 +1,6 @@
 """Tests for pit38_crypto.reader."""
 
 import pandas as pd
-import pytest
 
 from pit38_crypto.reader import read_statement
 
