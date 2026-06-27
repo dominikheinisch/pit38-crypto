@@ -4,3 +4,6 @@
 __pycache__/
 
 /data
+
+# Claude Code: share .claude/ but keep machine-local overrides out of git
+.claude/settings.local.json
