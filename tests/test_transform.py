@@ -61,7 +61,10 @@ def test_original_df_not_mutated(raw_statement_df):
     t = NumericTransformer()
     original_val = raw_statement_df.loc[0, "Total (inclusive of fees and/or spread)"]
     t.apply(raw_statement_df)
-    assert raw_statement_df.loc[0, "Total (inclusive of fees and/or spread)"] == original_val
+    assert (
+        raw_statement_df.loc[0, "Total (inclusive of fees and/or spread)"]
+        == original_val
+    )
 
 
 def test_custom_symbol():

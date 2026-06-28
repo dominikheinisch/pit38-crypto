@@ -1,7 +1,6 @@
 """Tests for pit38_crypto.currency — previous-working-day logic and sources."""
 
 import datetime
-import json
 import os
 import tempfile
 from io import StringIO
@@ -11,20 +10,20 @@ import pytest
 import responses as responses_lib
 
 from pit38_crypto.currency import (
-    FileCurrencySource,
-    NBPApiCurrencySource,
-    CurrencyMerger,
-    _match_rate,
-    _parse_rates_df,
     NBP_BASE_URL,
     OUTPUT_CURRENCY_DATE_COL,
+    CurrencyMerger,
+    FileCurrencySource,
+    NBPApiCurrencySource,
+    _match_rate,
+    _parse_rates_df,
 )
 from tests.conftest import SAMPLE_RATES_CSV
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _rates_df():
     raw = pd.read_csv(StringIO(SAMPLE_RATES_CSV))
@@ -34,6 +33,7 @@ def _rates_df():
 # ---------------------------------------------------------------------------
 # _match_rate — previous-working-day logic
 # ---------------------------------------------------------------------------
+
 
 class TestMatchRate:
     """Verify the strictly-less-than date lookup."""
@@ -110,6 +110,7 @@ class TestMatchRate:
 # FileCurrencySource
 # ---------------------------------------------------------------------------
 
+
 class TestFileCurrencySource:
     def test_loads_rates(self, rates_csv):
         src = FileCurrencySource(rates_csv)
@@ -148,6 +149,7 @@ class TestFileCurrencySource:
 # NBPApiCurrencySource
 # ---------------------------------------------------------------------------
 
+
 class TestNBPApiCurrencySource:
     @responses_lib.activate
     def test_fetches_and_parses(self):
@@ -182,8 +184,16 @@ class TestNBPApiCurrencySource:
                 "currency": "euro",
                 "code": "EUR",
                 "rates": [
-                    {"no": f"X/A/NBP/{year}", "effectiveDate": f"{year - 1}-12-30", "mid": 4.0},
-                    {"no": f"001/A/NBP/{year}", "effectiveDate": f"{year}-01-02", "mid": 4.0},
+                    {
+                        "no": f"X/A/NBP/{year}",
+                        "effectiveDate": f"{year - 1}-12-30",
+                        "mid": 4.0,
+                    },
+                    {
+                        "no": f"001/A/NBP/{year}",
+                        "effectiveDate": f"{year}-01-02",
+                        "mid": 4.0,
+                    },
                 ],
             }
 
@@ -202,14 +212,14 @@ class TestNBPApiCurrencySource:
 # CurrencyMerger
 # ---------------------------------------------------------------------------
 
+
 class TestCurrencyMerger:
     def _filtered_transformed_df(self):
         """Return a small buy-only, numerically-transformed DataFrame."""
         from pit38_crypto.filter import TransactionFilter
-        from pit38_crypto.transform import NumericTransformer
         from pit38_crypto.reader import read_statement
+        from pit38_crypto.transform import NumericTransformer
         from tests.conftest import SAMPLE_STATEMENT_CSV
-        import tempfile, os
 
         fd, path = tempfile.mkstemp(suffix=".csv")
         try:
@@ -258,7 +268,9 @@ class TestCurrencyMerger:
         merger = CurrencyMerger(source=src)
         result = merger.apply(df)
         for _, row in result.iterrows():
-            expected = row["Total (inclusive of fees and/or spread)"] * row["eur_pln_rate"]
+            expected = (
+                row["Total (inclusive of fees and/or spread)"] * row["eur_pln_rate"]
+            )
             assert row["total_pln"] == pytest.approx(expected)
 
     def test_rate_is_previous_working_day(self, rates_csv):

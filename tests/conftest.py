@@ -1,11 +1,9 @@
 """Shared fixtures for the test suite."""
 
-import datetime
 from io import StringIO
 
 import pandas as pd
 import pytest
-
 
 SAMPLE_STATEMENT_CSV = """\
 ,,,,,,,,,,
@@ -60,11 +58,11 @@ def rates_csv(tmp_path):
 @pytest.fixture()
 def raw_statement_df():
     """Raw (un-filtered, un-transformed) statement DataFrame."""
-    from pit38_crypto.reader import read_statement
-
-    buf = StringIO(SAMPLE_STATEMENT_CSV)
     # read_statement expects a file path; write to tmp and reload
-    import tempfile, os
+    import os
+    import tempfile
+
+    from pit38_crypto.reader import read_statement
 
     fd, path = tempfile.mkstemp(suffix=".csv")
     try:

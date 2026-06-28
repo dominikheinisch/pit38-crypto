@@ -1,8 +1,5 @@
 """Tests for pit38_crypto.filter."""
 
-import pandas as pd
-import pytest
-
 from pit38_crypto.filter import TransactionFilter
 
 

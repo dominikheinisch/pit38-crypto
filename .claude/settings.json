@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/bin/pytest:*)",
+      "Bash(.venv/bin/python:*)",
+      "Bash(.venv/bin/python3:*)",
+      "Bash(.venv/bin/pip:*)",
+      "Bash(.venv/bin/pit38-crypto:*)",
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(pre-commit:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/enforce-venv.py"
+          }
+        ]
+      }
+    ]
+  }
+}
