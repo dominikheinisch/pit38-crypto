@@ -207,6 +207,25 @@ class TestNBPApiCurrencySource:
         assert len(df) == 4
         assert df["date"].is_unique
 
+    @responses_lib.activate
+    def test_in_progress_year_clamps_end_to_today(self):
+        # A partial current year must not request a future end date: NBP rejects
+        # any range reaching past today with 400 Invalid date range.
+        payload = {
+            "table": "A",
+            "code": "EUR",
+            "rates": [
+                {"no": "001/A/NBP/2026", "effectiveDate": "2026-01-02", "mid": 4.25},
+            ],
+        }
+        url = f"{NBP_BASE_URL}/EUR/2025-12-29/2026-06-28/?format=json"
+        responses_lib.add(responses_lib.GET, url, json=payload, status=200)
+
+        src = NBPApiCurrencySource(today=datetime.date(2026, 6, 28))
+        df = src.get_rates("EUR", [2026])
+        assert len(df) == 1
+        assert df.loc[0, "date"] == datetime.date(2026, 1, 2)
+
 
 # ---------------------------------------------------------------------------
 # CurrencyMerger

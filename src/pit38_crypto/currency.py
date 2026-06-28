@@ -56,7 +56,17 @@ class NBPApiCurrencySource:
 
     Each request covers ``{year-1}-12-29`` to ``{year}-12-30`` so that
     Jan 1 transactions can always resolve a rate from the prior December.
+    For the in-progress year the end is clamped to *today*, because NBP rejects
+    any range reaching into the future with ``400 Invalid date range``.
+
+    Args:
+        today: Override for the current date, used to clamp the upper bound of
+            the requested range (defaults to ``datetime.date.today()``). Mainly
+            an injection point for deterministic tests.
     """
+
+    def __init__(self, *, today: datetime.date | None = None) -> None:
+        self._today = today or datetime.date.today()
 
     def get_rates(self, currency: str, years: list[int]) -> pd.DataFrame:
         frames = [self._fetch_year(currency.upper(), y) for y in sorted(set(years))]
@@ -71,7 +81,13 @@ class NBPApiCurrencySource:
         )
 
     def _fetch_year(self, currency: str, year: int) -> pd.DataFrame:
-        url = f"{NBP_BASE_URL}/{currency}/{year - 1}-12-29/{year}-12-30/?format=json"
+        # NBP has no future data; for the current year cap the range at today.
+        start = datetime.date(year - 1, 12, 29)
+        end = min(datetime.date(year, 12, 30), self._today)
+        url = (
+            f"{NBP_BASE_URL}/{currency}"
+            f"/{start.isoformat()}/{end.isoformat()}/?format=json"
+        )
         logger.debug("Fetching NBP rates: %s", url)
         response = requests.get(url, timeout=30)
         response.raise_for_status()

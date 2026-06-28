@@ -74,7 +74,9 @@ callables). Beyond what Ruff enforces, follow these by hand:
   file source and the API source deliberately include the previous year's late-December dates
   (Dec 29–31). Preserve this when touching `currency.py`.
 - NBP API: one request per year covering `{year-1}-12-29 .. {year}-12-30`; adjacent ranges
-  overlap by 2 days and are de-duplicated.
+  overlap by 2 days and are de-duplicated. For the **in-progress year** the end is clamped to
+  *today* (`NBPApiCurrencySource(today=...)`, defaults to `date.today()`) — NBP rejects any
+  range reaching into the future with `400 Invalid date range`.
 
 ## Data & helper script
 
